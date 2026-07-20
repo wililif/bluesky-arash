@@ -22,14 +22,22 @@ def get_author_feeds():
     client.app.bsky.feed.get_actor_feeds()
 
 def grab_post_details(item):
-        post_record = item.post.record
-        post_text = post_record.text
-        post_timestamp = post_record.created_at
-        post_media = post_record.embed
+    post = item.post
+    record = post.record
 
-        return (
-            post_text, post_timestamp, post_media
-        )
+    return {
+        "id": post.uri,
+        "text": getattr(record, "text", ""),
+        "created_at": record.created_at,
+        "media": getattr(record, "embed", None),
+        "display_name": post.author.display_name,
+        "handle": post.author.handle,
+        "avatar": post.author.avatar,
+        "likes": post.like_count,
+        "reposts": post.repost_count,
+        "replies": post.reply_count,
+    }
+        
 
 def get_user_posts():   
     feed = client.app.bsky.feed.get_author_feed(
