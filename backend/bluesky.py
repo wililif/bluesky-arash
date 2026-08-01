@@ -18,6 +18,27 @@ def session_login():
             f.write(session_string)
             print("Session created")    
 
+def is_video_post(item):
+    embed = getattr(item.post, "embed", None)
+
+    if embed is None:
+        return False 
+
+    return getattr(item.post, "playlist", None) is not None
+
+def extract_video(item):
+    embed = getattr(item.post, "embed", None)
+
+    if embed is None: 
+        return None
+
+    playlist = getattr(item.post, "playlist", None)
+
+    if playlist is None: 
+        return None 
+
+    aspect_ratio = getattr(embed, "aspect_ratio")
+
 def get_author_feeds():
     client.app.bsky.feed.get_actor_feeds()
 
@@ -36,8 +57,8 @@ def grab_post_details(item):
         "likes": post.like_count,
         "reposts": post.repost_count,
         "replies": post.reply_count,
-    }
         
+    }
 
 def get_user_posts():   
     feed = client.app.bsky.feed.get_author_feed(
@@ -57,5 +78,7 @@ def get_user_timeline():
     shuffle(feed)
 
     return [grab_post_details(item) for item in feed]
+
+    
 
 
