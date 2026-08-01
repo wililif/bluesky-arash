@@ -18,8 +18,8 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -31,5 +31,6 @@ async def posts():
     return get_user_posts()
 
 @app.get("/timeline")
-async def timeline():
-    return get_user_timeline()
+async def timeline(video_only: bool = False):
+    return get_user_timeline(video_only=video_only)
+
