@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import HlsVideo from "./components/HlsVideo";
 
 function App() {
   const [posts, setPosts] = useState([]);
@@ -10,7 +9,7 @@ function App() {
   useEffect(() => {
     async function loadTimeline() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/timeline?video_only=true"); // URL can be changed depending on if video only filter is wanted:
+        const response = await fetch("http://127.0.0.1:8000/timeline?video_only=false"); // URL can be changed depending on if video only filter is wanted:
         // Filter On: http://127.0.0.1:8000/timeline?video_only=true
         // Filter Off: http://127.0.0.1:8000/timeline?video_only=false
 
@@ -82,12 +81,13 @@ function App() {
 
         if (media.type === "video") {
           return (
-            <HlsVideo
+            <video
               key={`${post.id}-media-${index}`}
               src={media.url}
-              poster={media.thumbnail}
+              poster={media.thumbnail || undefined}
               className="post-media"
-              aspectRatio={aspectRatio}
+              style={{ aspectRatio }}
+              controls
             />
           );
         }
