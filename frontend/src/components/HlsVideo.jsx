@@ -4,65 +4,61 @@ import Hls from "hls.js";
 function HlsVideo({
   src,
   poster,
+  alt = "Post video",
   aspectRatio = "16 / 9",
   className = "",
 }) {
   const videoRef = useRef(null);
 
-useEffect(() => {
-  const video = videoRef.current;
+  useEffect(() => {
+    const videoElement = videoRef.current;
 
-  if (!video || !src) {
-    return;
-  }
-
-  let hls;
-
-  if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    video.src = src;
-    video.load();
-  } else if (Hls.isSupported()) {
-    hls = new Hls({
-      debug: true,
-    });
-
-    hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-      console.log("Manifest parsed:", data);
-    });
-
-    hls.on(Hls.Events.ERROR, (_, data) => {
-      console.error("HLS error:", {
-        type: data.type,
-        details: data.details,
-        fatal: data.fatal,
-      });
-    });
-
-    hls.loadSource(src);
-    hls.attachMedia(video);
-  } else {
-    console.error("HLS is not supported in this browser.");
-  }
-
-  return () => {
-    if (hls) {
-      hls.destroy();
+    if (!videoElement || !src) {
+      return;
     }
-  };
-}, [src]);
+
+    let hls;
+
+    if (Hls.isSupported()) {
+      hls = new Hls();
+
+      hls.loadSource(src);
+
+      hls.attachMedia(videoElement);
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        console.error("HLS playback error:", data);
+      });
+    }
+
+    else if (
+      videoElement.canPlayType("application/vnd.apple.mpegurl")
+    ) {
+      videoElement.src = src;
+    }
+
+    else {
+      console.error("This browser does not support HLS video.");
+    }
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
+  }, [src]);
 
   return (
     <video
       ref={videoRef}
+      controls
+      playsInline
+      preload="metadata"
       poster={poster || undefined}
+      aria-label={alt}
       className={className}
       style={{ aspectRatio }}
-      controls
-      preload="metadata"
-      playsInline
-    >
-      Your browser does not support video playback.
-    </video>
+    />
   );
 }
 
