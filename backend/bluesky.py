@@ -1,6 +1,7 @@
 from pathlib import Path
 from atproto import Client, IdResolver
 from random import shuffle 
+import json
 
 client = Client()
 def session_login():
@@ -58,8 +59,8 @@ def extract_video(item):
 def extract_images(item):
     embed = getattr(item.post, "embed", None)
 
-    if embed is None: 
-        return None
+    if embed is None:
+        return []
 
     images = getattr(embed, "images", None)
 
@@ -87,6 +88,9 @@ def extract_images(item):
                 else None
             ),
         })
+
+    return extracted_images
+
 
 
 def get_author_feeds():
@@ -150,7 +154,14 @@ def get_user_timeline(video_only):
         for item in combined_feed
     ]
 
-
+def open_timeline():
+    path = Path(__file__).resolve().parent / "timeline.json"
+    if not path.exists():
+        return {
+            "error": "timeline.json not found",
+            "looking at": str(path)
+        }
+    with path.open("r", encoding="utf-8") as f: 
+        timeline_json = json.load(f)
+    return timeline_json
     
-
-

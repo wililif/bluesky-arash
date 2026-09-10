@@ -6,6 +6,7 @@ from backend.bluesky import (
     session_login,
     get_user_posts,
     get_user_timeline,
+    open_timeline,
 )
 @asynccontextmanager
 async def lifespan(app : FastAPI):
@@ -20,6 +21,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5174",
         "http://127.0.0.1:5174",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -34,3 +38,6 @@ async def posts():
 async def timeline(video_only: bool = False):
     return get_user_timeline(video_only=video_only)
 
+@app.get("/savedtimeline")
+async def savedtimeline():
+    return open_timeline()
