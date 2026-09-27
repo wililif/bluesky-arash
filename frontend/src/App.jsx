@@ -1,113 +1,280 @@
+  import {
+  Routes,
+  Route,
+  Link,
+  Navigate,
+} from "react-router-dom";
+
 import { useEffect, useState } from "react";
 import HlsVideo from "./components/HlsVideo";
 import "./App.css";
 
-function App() {
+const API_URL = "http://127.0.0.1:8000";
+
+function PostList({
+  endpoint,
+  title,
+  videoOnly = false,
+}) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadTimeline() {
+    async function loadPosts() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/savedtimeline"); // URL can be changed depending on if video only filter is wanted:
-        // Filter On: http://127.0.0.1:8000/timeline?video_only=true
-        // Filter Off: http://127.0.0.1:8000/timeline?video_only=false
+        setLoading(true);
+        setError("");
 
-        // Use saved timeline: http://127.0.0.1:8000/savedtimeline
+        let url = `${API_URL}${endpoint}`;
+
+        if (endpoint === "/timeline") {
+          url += `?video_only=${videoOnly}`;
+        }
+
+        console.log("Fetching:", url);
+
+        const response = await fetch(url);
+
+        console.log("Response status:", response.status);
 
         if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
+          throw new Error(
+            `Request failed with status ${response.status}`
+          );
         }
 
         const data = await response.json();
-        setPosts(data);
+
+        console.log("API response:", data);
+
+        if (Array.isArray(data)) {
+          setPosts(data);
+        } else if (Array.isArray(data.posts)) {
+          setPosts(data.posts);
+        } else if (Array.isArray(data.data)) {
+          setPosts(data.data);
+        } else {
+          console.error(
+            "API did not return an array of posts:",
+            data
+          );
+
+          setPosts([]);
+
+          setError(
+            "The API returned data, but it was not a list of posts. Check the browser console."
+          );
+        }
       } catch (err) {
+        console.error("Failed to load posts:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     }
 
-    loadTimeline();
-  }, []);
+    loadPosts();
+  }, [endpoint, videoOnly]);
 
   if (loading) {
-    return <p>Loading timeline...</p>;
+    return (
+      <main>
+        <h1>{title}</h1>
+        <p>Loading...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>Could not load timeline: {error}</p>;
+    return (
+      <main>
+        <h1>{title}</h1>
+        <p>
+          <strong>Error:</strong> {error}
+        </p>
+        <p>
+          Check the browser console for more information.
+        </p>
+      </main>
+    );
   }
 
   return (
-<main>
-  <h1>Timeline</h1>
+    <main>
+      <h1>{title}</h1>
 
-  {posts.map((post) => (
-    <article key={post.id}>
-      <header>
-        {post.avatar && (
-          <img
-            src={post.avatar}
-            alt=""
-            width="48"
-            height="48"
-          />
-        )}
+      {posts.length === 0 && (
+        <p>No posts found.</p>
+      )}
 
-        <div>
-          <strong>{post.display_name || post.handle}</strong>
-          <div>@{post.handle}</div>
-        </div>
-      </header>
+      {posts.map((post) => (
+        <article
+          key={post.id}
+          className="post"
+        >
+          <header className="post-header">
+            {post.avatar && (
+              <img
+                src={post.avatar}
+                alt=""
+                width="48"
+                height="48"
+                className="avatar"
+              />
+            )}
 
-      <p>{post.text}</p>
+            <div>
+              <strong>
+                {post.display_name ||
+                  post.handle ||
+                  "Unknown user"}
+              </strong>
 
-      {post.media?.map((media, index) => {
-        const aspectRatio =
-          media.width && media.height
-            ? `${media.width} / ${media.height}`
-            : "16 / 9";
+              {post.handle && (
+                <div>
+                  @{post.handle}
+                </div>
+              )}
+            </div>
+          </header>
 
-        if (media.type === "image") {
-          return (
-            <img
-              key={`${post.id}-media-${index}`}
-              src={media.url}
-              alt={media.alt || ""}
-              className="post-media"
-              style={{ aspectRatio }}
+          {post.text && (
+            <p>{post.text}</p>
+          )}
+
+          {Array.isArray(post.media) &&
+            post.media.map((media, index) => {
+              const aspectRatio =
+                media.width && media.height
+                  ? `${media.width} / ${media.height}`
+                  : "16 / 9";
+
+              if (media.type === "image") {
+                return (
+                  <img
+                    key={`${post.id}-media-${index}`}
+                    src={media.url}
+                    alt={media.alt || ""}
+                    className="post-media"
+                    style={{
+                      aspectRatio,
+                    }}
+                  />
+                );
+              }
+
+              if (media.type === "video") {
+                return (
+                  <HlsVideo
+                    key={`${post.id}-media-${index}`}
+                    src={media.url}
+                    poster={media.thumbnail}
+                    alt={
+                      media.alt ||
+                      "Post video"
+                    }
+                    aspectRatio={aspectRatio}
+                    className="post-media"
+                  />
+                );
+              }
+
+              return null;
+            })}
+
+          <footer className="post-footer">
+            <span>
+              {post.replies ?? 0} replies
+            </span>
+
+            <span>
+              {post.reposts ?? 0} reposts
+            </span>
+
+            <span>
+              {post.likes ?? 0} likes
+            </span>
+          </footer>
+        </article>
+      ))}
+    </main>
+  );
+}
+
+function TimelinePage() {
+  return (
+    <PostList
+      endpoint="/timeline"
+      title="Timeline"
+      videoOnly={false}
+    />
+  );
+}
+
+function SavedTimelinePage() {
+  return (
+    <PostList
+      endpoint="/savedtimeline"
+      title="Saved Timeline"
+    />
+  );
+}
+
+function PostsPage() {
+  return (
+    <PostList
+      endpoint="/posts"
+      title="My Posts"
+    />
+  );
+}
+
+function App() {
+  return (
+    <>
+      <nav className="navbar">
+        <Link to="/timeline">
+          Timeline
+        </Link>
+
+        <Link to="/savedtimeline">
+          Saved Timeline
+        </Link>
+
+        <Link to="/posts">
+          My Posts
+        </Link>
+      </nav>
+
+      <Routes>
+        <Route
+          path="/timeline"
+          element={<TimelinePage />}
+        />
+
+        <Route
+          path="/savedtimeline"
+          element={<SavedTimelinePage />}
+        />
+
+        <Route
+          path="/posts"
+          element={<PostsPage />}
+        />
+
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to="/timeline"
+              replace
             />
-          );
-        }
-
-        if (media.type === "video") {
-          return (
-            <HlsVideo
-              key={`${post.id}-media-${index}`}
-              src={media.url}
-              poster={media.thumbnail}
-              alt={media.alt || "Post video"}
-              aspectRatio={aspectRatio}
-              className="post-media"
-            />
-          );
-        }
-
-        return null;
-      })}
-
-      <footer>
-        <span>{post.replies ?? 0} replies </span>
-        <span>{post.reposts ?? 0} reposts </span>
-        <span>{post.likes ?? 0} likes </span>
-      </footer>
-    </article>
-  ))}
-</main>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 
 export default App;
-  

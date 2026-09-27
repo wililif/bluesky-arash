@@ -193,3 +193,14 @@
   object-fit: contain;
   background: black;
 }
+
+.navbar {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.navbar a {
+  text-decoration: none;
+  font-weight: bold;
+}
