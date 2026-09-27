@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from database import init_db
+
 from contextlib import asynccontextmanager
-from backend.bluesky import (
+from bluesky import (
     session_login,
     get_user_posts,
     get_user_timeline,
@@ -16,6 +18,7 @@ async def lifespan(app : FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+init_db()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

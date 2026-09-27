@@ -91,8 +91,6 @@ def extract_images(item):
 
     return extracted_images
 
-
-
 def get_author_feeds():
     client.app.bsky.feed.get_actor_feeds()
 
@@ -119,7 +117,6 @@ def grab_post_details(item):
         "likes": post.like_count,
         "reposts": post.repost_count,
         "replies": post.reply_count,
-        
     }
 
 def get_user_posts():   
@@ -164,4 +161,22 @@ def open_timeline():
     with path.open("r", encoding="utf-8") as f: 
         timeline_json = json.load(f)
     return timeline_json
+
+def get_timeline_video_info():
+    timeline = open_timeline()
+    videos = []
+
+    for post in timeline:
+        uri = post.get("id")
+        media_items = post.get("media", [])
+
+        for media in media_items:
+            if media.get("type") == "video":
+                video_url = media.get("url")
+
+                if uri and video_url:
+                    videos.append({
+                        "uri": uri,
+                        "playlist_url": video_url
+                    })
     
